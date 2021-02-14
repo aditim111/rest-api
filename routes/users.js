@@ -95,6 +95,43 @@ router.delete('/:userId', async(req,res)=>{
 // })
 
 //upload
+
+//for validation
+function validateCsvData(rows) {
+  const dataRows = rows.slice(1, rows.length); //ignore header at 0 and get rest of the rows
+  for (let i = 0; i < dataRows.length; i++) {
+    const rowError = validateCsvRow(dataRows[i]);
+    if (rowError) {
+      return `${rowError} on row ${i + 1}`
+    }
+  }
+  return;
+}
+function validateEmail(email) {
+  const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return re.test(email);
+}
+
+function validateCsvRow(row) {
+  if (!row[0]) {
+    return "invalid name"
+  }
+ else if (!row[1]){
+    return "invalid email"
+  }
+
+  else if (!Number.isInteger(Number(row[2]))) {
+    return "invalid phone number"
+  }
+   else if (!Number.isInteger(Number(row[3]))) {
+    return "invalid age"
+  }
+     else if (!Number.isInteger(Number(row[4]))) {
+    return "invalid ssn no."
+  }
+  return;
+}
+
 const upload = multer({ dest: 'tmp/csv/' });
 router.post('/upload', upload.single('file'), async (req, res) =>{
   const fileRows = [];
@@ -118,6 +155,15 @@ router.post('/upload', upload.single('file'), async (req, res) =>{
         console.log(`Inserted rows`);
         });
       fs.unlinkSync(req.file.path);   // remove temp file
+    
+      const validationError = validateCsvData(fileRows);
+      if (validationError) {
+        return res.status(403).json({ error: validationError });
+      }
+      //else process "fileRows" and respond
+      return res.json({ message: "valid csv" })
+
+
     })
 });
 
