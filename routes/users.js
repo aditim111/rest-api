@@ -7,98 +7,26 @@ const json2csv = require('json2csv').parse;
 const path = require('path')
 const multer = require('multer');
 const csv = require('fast-csv');
+const { UserSchema } = require('../helpers/validation_schema');
+const createError = require('http-errors');
+const userController = require('../controllers/userController')
 
 //get
-router.get('/', async (req,res)=>{
-    try{
-        const users= await User.find()
-        res.json(users)
-        console.log(users)
-    }catch(err){
-        res.json({message: err})
-    }
-})
+router.get('/', userController.getUser)
 
 //post
-router.post('/', async (req, res)=>{
-    const user = new User({
-        name: req.body.name,
-        email: req.body.email,
-        phone: req.body.phone,
-        age: req.body.age,
-        ssnno: req.body.ssnno,
-    });    
-    try{
-    const savedUser=await User.insertMany(req.body.user)
-    res.json(savedUser)
-    }catch(err){
-         res.json({message: err})
-
-    }
-   
-})
-
+router.post('/', userController.postUser )
 
 //get user by id
-router.get('/:userId', async(req,res)=>{
-   
-    try{
-    const user= await User.findById(req.params.userId)
-    res.json(user)
-    }catch(err){
-        res.json({message : err})
-    }
-})
+router.get('/:userId', userController.getUserbyId)
 
 //delete user by id
-router.delete('/:userId', async(req,res)=>{
-    try{
-        const removedUser = await User.remove({_id:req.params.userId})
-        res.json(removedUser)
-
-    }catch(err){
-        res.json({ message : err})
-    }
-})
-
-
-// //download
-// const fields = ['name', 'email', 'phone', 'age', 'ssnno'];
-// router.get('/download', async function (req, res) {
-//   await User.find({}, function (err, users) {
-//     if (err) {
-//       return res.status(500).json({ err });
-//     }
-//     else {
-//       let csv
-//       try {
-//         csv = json2csv(users, { fields });
-//       } catch (err) {
-//         return res.status(500).json({ err });
-//       }
-//       const dateTime = moment().format('YYYYMMDDhhmmss');
-//       const filePath = path.join(__dirname, "..", "downloads", "csv-" + dateTime + ".csv")
-//       fs.writeFile(filePath, csv, function (err) {
-//         if (err) {
-//           return res.json(err).status(500);
-//         }
-//         else {
-//           setTimeout(function () {
-//             fs.unlinkSync(filePath); // delete this file after 30 seconds
-//           }, 30000)
-//           return res.json("/downloads/csv-" + dateTime + ".csv");
-//         }
-//       });
-
-//     }
-//   })
-// })
+router.delete('/:userId', userController.deleteUserbyId)
 
 //upload
-
 //for validation
 function validateCsvData(rows) {
-  const dataRows = rows.slice(1, rows.length); //ignore header at 0 and get rest of the rows
+  const dataRows = rows.slice(1, rows.length); 
   for (let i = 0; i < dataRows.length; i++) {
     const rowError = validateCsvRow(dataRows[i]);
     if (rowError) {
@@ -106,10 +34,6 @@ function validateCsvData(rows) {
     }
   }
   return;
-}
-function validateEmail(email) {
-  const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  return re.test(email);
 }
 
 function validateCsvRow(row) {
@@ -136,7 +60,6 @@ const upload = multer({ dest: 'tmp/csv/' });
 router.post('/upload', upload.single('file'), async (req, res) =>{
   const fileRows = [];
 
-  // open uploaded file
   await csv.parseFile(req.file.path)
     .on("data", function (data) {
       fileRows.push({
@@ -154,13 +77,12 @@ router.post('/upload', upload.single('file'), async (req, res) =>{
         if (err) throw err;
         console.log(`Inserted rows`);
         });
-      fs.unlinkSync(req.file.path);   // remove temp file
+      fs.unlinkSync(req.file.path);   
     
       const validationError = validateCsvData(fileRows);
       if (validationError) {
         return res.status(403).json({ error: validationError });
       }
-      //else process "fileRows" and respond
       return res.json({ message: "valid csv" })
 
 
