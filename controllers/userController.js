@@ -17,7 +17,7 @@ module.exports={
 },
     postUser: async (req, res, next)=>{   
     try{
-        const result = await UserSchema.validateAsync(req.body)
+        const result = await UserSchema.validateAsync(req.body.user)
 
         const doesExist = await User.findOne({ email : result.email })
         if (doesExist) throw createError.Conflict(`${result.email} has already been registered.`)
