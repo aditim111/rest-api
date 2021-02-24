@@ -20,6 +20,9 @@ router.post('/', userController.postUser )
 //get user by id
 router.get('/:userId', userController.getUserbyId)
 
+//update 
+router.patch("/:userId", userController.updateUser)
+
 //delete user by id
 router.delete('/:userId', userController.deleteUserbyId)
 
