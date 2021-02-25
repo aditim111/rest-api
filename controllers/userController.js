@@ -1,6 +1,7 @@
 const User = require('../models/User')
-const { UserSchema, UserId , UpdateUserSchema} = require('../helpers/validation_schema');
+const { UserSchema, UserId , UpdateUserSchema, loginSchema} = require('../helpers/validation_schema');
 const createError = require('http-errors');
+const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../helpers/jwt_helper')
 
 module.exports={
     getUser: async (req,res)=>{
@@ -17,14 +18,20 @@ module.exports={
 },
     postUser: async (req, res, next)=>{   
     try{
-        const ValidatedUser = await UserSchema.validateAsync(req.body.user)
+        const ValidatedUser = await UserSchema.validateAsync(req.body)
         const doesExist = await User.findOne({ email : ValidatedUser.email })
         if (doesExist) throw createError.Conflict(`${ValidatedUser.email} has already been registered.`)
-        const savedUser=await User.insertMany(ValidatedUser)
+        // const savedUser=await User.insertMany(ValidatedUser)    
+        const user = new User(ValidatedUser)   
+        const savedUser = await user.save()
+        const accessToken = await signAccessToken(savedUser.id)
+        const refreshToken = await signRefreshToken(savedUser.id)         
+         
 
         res.status(201).json({
                 status: 'success',
-                data: savedUser
+                accessToken: accessToken,
+                refreshToken: refreshToken
             });
 
     }catch (error) {
@@ -45,6 +52,48 @@ module.exports={
         next(error)
         }
     },
+
+        loginUser: async ( req , res , next )=>{ 
+        try{
+        const ValidatedSchema = await loginSchema.validateAsync(req.body)
+        const user= await User.findOne({email: ValidatedSchema.email})
+        if (!user) throw createError.NotFound('User not registered.')
+
+        const isMatch = await user.isValidPassword(ValidatedSchema.password)
+        if (!isMatch) throw createError.Unauthorized('Username/Password not valid.')
+
+        const accessToken = await signAccessToken(user.id)
+        const refreshToken = await signRefreshToken(user.id)         
+
+            res.status(200).json({
+                status: 'success',
+                data: ({accessToken, refreshToken})
+            });
+        }catch (error) {
+        if (error.isJoi === true)
+            return next(createError.BadRequest('Username/Password invalid.'))
+        next(error)
+        }
+    },
+
+    refreshToken: async (req, res, next) =>{
+        try {
+            const { refreshToken } = req.body
+            if (!refreshToken) throw createError.BadRequest()
+            const userId = await verifyRefreshToken(refreshToken)
+
+            const accessToken = await signAccessToken(userId)
+            const refToken = await signRefreshToken(userId)
+
+            res.status(200).json({
+                status: 'success',
+                data: ({accessToken: accessToken, refreshToken: refToken})
+            });
+        } catch (error) {
+            next(error)
+        }
+    },
+
     updateUser: async (req, res, next) => {
 	try {
         const ValidatedId = await UserId.validateAsync(req.params)

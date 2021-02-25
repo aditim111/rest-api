@@ -6,6 +6,8 @@ const cors= require('cors')
 const createError = require('http-errors')
 var config = require('config');
 require('dotenv/config')
+const { verifyAccessToken }= require('./helpers/jwt_helper')
+
 const app = express()
 
 app.use(morgan('dev'))
@@ -22,7 +24,7 @@ app.use('/users', usersRoute)
 const downloadRoute= require('./routes/download')
 app.use('/download', downloadRoute)
 
-app.get('/', (req, res)=>{
+app.get('/', verifyAccessToken, async (req, res)=>{
     res.status(200).json({
     status: 'success',
     data: 'Rest API'

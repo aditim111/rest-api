@@ -11,11 +11,19 @@ const { UserSchema } = require('../helpers/validation_schema');
 const createError = require('http-errors');
 const userController = require('../controllers/userController')
 
+
+
 //get
 router.get('/', userController.getUser)
 
-//post
-router.post('/', userController.postUser )
+//register
+router.post('/register', userController.postUser )
+
+//login
+router.post('/login', userController.loginUser)
+
+//Refresh token
+router.post('/refresh-token', userController.refreshToken)
 
 //get user by id
 router.get('/:userId', userController.getUserbyId)
