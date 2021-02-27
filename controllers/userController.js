@@ -106,6 +106,9 @@ module.exports={
         if (validatedUserSchema.email) {
 			user.email = validatedUserSchema.email
         }
+        if (validatedUserSchema.password) {
+			user.ssnno = validatedUserSchema.password
+        }
         if (validatedUserSchema.phone) {
 			user.phone = validatedUserSchema.phone
         }
@@ -115,6 +118,7 @@ module.exports={
         if (validatedUserSchema.ssnno) {
 			user.ssnno = validatedUserSchema.ssnno
         }
+
 
         await user.save()
         res.status(204).end()

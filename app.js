@@ -6,7 +6,6 @@ const cors= require('cors')
 const createError = require('http-errors')
 var config = require('config');
 require('dotenv/config')
-const { verifyAccessToken }= require('./helpers/jwt_helper')
 
 const app = express()
 
@@ -24,7 +23,7 @@ app.use('/users', usersRoute)
 const downloadRoute= require('./routes/download')
 app.use('/download', downloadRoute)
 
-app.get('/', verifyAccessToken, async (req, res)=>{
+app.get('/', async (req, res)=>{
     res.status(200).json({
     status: 'success',
     data: 'Rest API'
