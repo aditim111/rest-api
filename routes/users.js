@@ -10,11 +10,12 @@ const csv = require('fast-csv');
 const { UserSchema } = require('../helpers/validation_schema');
 const createError = require('http-errors');
 const userController = require('../controllers/userController')
+const { verifyAccessToken } = require('../helpers/jwt_helper')
 
 
 
 //get
-router.get('/', userController.getUser)
+router.get('/', verifyAccessToken, userController.getUser)
 
 //register
 router.post('/register', userController.postUser )
@@ -26,13 +27,13 @@ router.post('/login', userController.loginUser)
 router.post('/refresh-token', userController.refreshToken)
 
 //get user by id
-router.get('/:userId', userController.getUserbyId)
+router.get('/:userId', verifyAccessToken, userController.getUserbyId)
 
 //update 
-router.patch("/:userId", userController.updateUser)
+router.patch("/:userId", verifyAccessToken, userController.updateUser)
 
 //delete user by id
-router.delete('/:userId', userController.deleteUserbyId)
+router.delete('/:userId', verifyAccessToken, userController.deleteUserbyId)
 
 //upload
 //for validation
