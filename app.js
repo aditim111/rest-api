@@ -6,14 +6,19 @@ const cors= require('cors')
 const createError = require('http-errors')
 var config = require('config');
 require('dotenv/config')
+const winston = require('./services/winston');
+const helmet = require('helmet')
+
 
 const app = express()
 
-app.use(morgan('dev'))
 
 //Middlewares
-app.use(cors())
+app.use(require('express-status-monitor')());
 app.use(bodyParser.json())
+app.use(morgan('combined', { stream: winston.stream }));
+app.use(helmet())
+app.use(cors())
 
 //Import routes
 //Users
@@ -35,7 +40,10 @@ app.use(async(req, res, next) => {
 })
 
 app.use((err, req, res, next) =>{
+    winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+
     res.status(err.status || 500)
+
     res.send({
         error:{
             status: err.status || 500,
